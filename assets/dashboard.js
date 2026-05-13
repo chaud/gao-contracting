@@ -116,16 +116,45 @@ const panels = {
   competition: document.getElementById('panel-competition'),
   ota: document.getElementById('panel-ota'),
 };
-tabs.forEach(t => {
-  t.addEventListener('click', () => {
-    tabs.forEach(x => x.setAttribute('aria-selected', 'false'));
-    t.setAttribute('aria-selected', 'true');
-    const key = t.dataset.tab;
-    Object.entries(panels).forEach(([k, el]) => el.classList.toggle('hidden', k !== key));
-    // Re-render current tab so it picks up viewport width correctly
-    renderAll();
-  });
+const navPrev = document.getElementById('nav-prev');
+const navNext = document.getElementById('nav-next');
+function updateNavArrows() {
+  const idx = Array.from(tabs).findIndex(t => t.getAttribute('aria-selected') === 'true');
+  navPrev.hidden = idx <= 0;
+  navNext.hidden = idx >= tabs.length - 1;
+}
+function selectTab(t, { updateHash = true } = {}) {
+  tabs.forEach(x => x.setAttribute('aria-selected', 'false'));
+  t.setAttribute('aria-selected', 'true');
+  const key = t.dataset.tab;
+  Object.entries(panels).forEach(([k, el]) => el.classList.toggle('hidden', k !== key));
+  if (updateHash && location.hash.slice(1) !== key) {
+    history.pushState({ tab: key }, '', '#' + key);
+  }
+  updateNavArrows();
+  renderAll();
+}
+tabs.forEach(t => t.addEventListener('click', () => selectTab(t)));
+navPrev.addEventListener('click', () => {
+  const idx = Array.from(tabs).findIndex(t => t.getAttribute('aria-selected') === 'true');
+  if (idx > 0) selectTab(tabs[idx - 1]);
 });
+navNext.addEventListener('click', () => {
+  const idx = Array.from(tabs).findIndex(t => t.getAttribute('aria-selected') === 'true');
+  if (idx < tabs.length - 1) selectTab(tabs[idx + 1]);
+});
+
+// Sync with URL hash (initial load + back/forward)
+function selectFromHash() {
+  const key = location.hash.slice(1);
+  const target = Array.from(tabs).find(t => t.dataset.tab === key);
+  if (target && target.getAttribute('aria-selected') !== 'true') {
+    selectTab(target, { updateHash: false });
+  }
+}
+window.addEventListener('hashchange', selectFromHash);
+if (location.hash) selectFromHash();
+updateNavArrows();
 
 // ============ Filter chips (treemap) ============
 document.querySelectorAll('[data-filter]').forEach(btn => {
@@ -354,129 +383,129 @@ function renderDonut() {
   const el = document.getElementById('donut');
   el.innerHTML = '';
   const W = el.clientWidth || 700;
-  const H = 420;
-  const cx = W / 2;
-  const cy = H / 2 + 10;
   const f = state.filter;
 
-  const svg = d3.select(el).append('svg').attr('width', W).attr('height', H);
-  const g = svg.append('g').attr('transform', `translate(${cx},${cy})`);
-
+  // Build group rows based on filter
+  let groups;
   if (f.kind === 'dept') {
-    // Single-ring donut for one dept
     const rows = coSizeData.filter(d => d.dept === f.value && (d.co_size === 'SMALL BUSINESS' || d.co_size === 'OTHER THAN SMALL BUSINESS'));
     const sb = d3.sum(rows.filter(r => r.co_size === 'SMALL BUSINESS'), r => r.obs);
     const other = d3.sum(rows.filter(r => r.co_size === 'OTHER THAN SMALL BUSINESS'), r => r.obs);
-    const total = sb + other;
-    const ringColor = dodLU[f.value] === 'Defense' ? COLORS.def : COLORS.civ;
-    const lightColor = dodLU[f.value] === 'Defense' ? '#4a7eb3' : COLORS.civLight;
+    const grp = dodLU[f.value];
+    groups = [{
+      name: f.value,
+      color: grp === 'Defense' ? COLORS.def : COLORS.civ,
+      lightColor: grp === 'Defense' ? '#73b3e7' : COLORS.civLight,
+      sb, other, total: sb + other,
+    }];
+  } else {
+    const filterGroup = f.kind === 'group' ? f.value : null;
+    const buckets = { Civilian: { sb: 0, other: 0 }, Defense: { sb: 0, other: 0 } };
+    coSizeData.forEach(d => {
+      if (filterGroup && d.dod_civ !== filterGroup) return;
+      if (d.co_size === 'SMALL BUSINESS') buckets[d.dod_civ].sb += d.obs;
+      else if (d.co_size === 'OTHER THAN SMALL BUSINESS') buckets[d.dod_civ].other += d.obs;
+    });
+    const groupList = filterGroup ? [filterGroup] : ['Civilian', 'Defense'];
+    groups = groupList.map(grp => ({
+      name: grp,
+      color: grp === 'Defense' ? COLORS.def : COLORS.civ,
+      lightColor: grp === 'Defense' ? '#73b3e7' : COLORS.civLight,
+      sb: buckets[grp].sb,
+      other: buckets[grp].other,
+      total: buckets[grp].sb + buckets[grp].other,
+    }));
+  }
+  groups = groups.filter(g => g.total > 0);
+  if (groups.length === 0) return;
 
-    const arc = d3.arc().innerRadius(90).outerRadius(160);
-    const pie = d3.pie().value(d => d.value).sort(null).startAngle(-Math.PI/2).endAngle(Math.PI*3/2);
-    const data = [
-      { name: 'Small business', value: sb, color: lightColor },
-      { name: 'Other than small', value: other, color: ringColor }
-    ];
+  // Layout
+  const barH = 72;
+  const rowGap = 72;
+  const margin = { top: 32, right: 150, bottom: 28, left: 24 };
+  const innerW = W - margin.left - margin.right;
+  const H = margin.top + margin.bottom + groups.length * barH + (groups.length - 1) * rowGap;
 
-    g.selectAll('arc').data(pie(data)).join('path')
-      .attr('d', arc).attr('fill', d => d.data.color)
-      .on('mousemove', (ev, d) => showTip(`<strong>${d.data.name}</strong><span class="tt-val">${fmtSmart(d.data.value)} · ${fmtPct1(d.data.value/total)}</span>`, ev))
+  const maxTotal = d3.max(groups, g => g.total) || 1;
+  const xScale = d3.scaleLinear().domain([0, maxTotal]).range([0, innerW]);
+  const GOAL = 0.23;
+
+  const svg = d3.select(el).append('svg').attr('width', W).attr('height', H);
+  const root = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  groups.forEach((grp, i) => {
+    const y = i * (barH + rowGap);
+    const sbW = xScale(grp.sb);
+    const otherW = xScale(grp.other);
+    const sbPct = grp.sb / grp.total;
+    const otherPct = grp.other / grp.total;
+
+    // Section header (group name) + total on the right
+    root.append('text').attr('x', 0).attr('y', y - 10)
+      .attr('font-size', 12).attr('font-weight', 700)
+      .attr('letter-spacing', '0.08em').attr('fill', grp.color)
+      .text(grp.name.toUpperCase());
+    root.append('text').attr('x', sbW + otherW).attr('y', y - 10)
+      .attr('text-anchor', 'end').attr('font-family', "'Roboto Mono', monospace")
+      .attr('font-size', 13).attr('font-weight', 500).attr('fill', COLORS.ink)
+      .text(fmtSmart(grp.total) + ' total');
+
+    // Bar segments
+    root.append('rect').attr('x', 0).attr('y', y).attr('width', sbW).attr('height', barH)
+      .attr('fill', grp.lightColor)
+      .on('mousemove', ev => showTip(`<strong>${grp.name} · Small business</strong><span class="tt-val">${fmtSmart(grp.sb)} · ${fmtPct1(sbPct)}</span>`, ev))
+      .on('mouseleave', hideTip);
+    root.append('rect').attr('x', sbW).attr('y', y).attr('width', otherW).attr('height', barH)
+      .attr('fill', grp.color)
+      .on('mousemove', ev => showTip(`<strong>${grp.name} · Other than small</strong><span class="tt-val">${fmtSmart(grp.other)} · ${fmtPct1(otherPct)}</span>`, ev))
       .on('mouseleave', hideTip);
 
-    g.append('text').attr('text-anchor', 'middle').attr('y', -10)
-      .attr('font-family', "'Merriweather', Georgia, serif")
-      .attr('font-size', 18).attr('font-weight', 700).attr('fill', COLORS.ink)
-      .text(f.value);
-    g.append('text').attr('text-anchor', 'middle').attr('y', 14)
-      .attr('font-family', "'Merriweather', Georgia, serif")
-      .attr('font-size', 22).attr('font-weight', 700).attr('fill', COLORS.ink)
-      .text(fmtB(total));
-    g.append('text').attr('text-anchor', 'middle').attr('y', 32)
-      .attr('font-size', 11).attr('fill', COLORS.muted)
-      .attr('letter-spacing', '0.08em').text('TOTAL · ' + fmtPct1(sb/total) + ' SMALL BIZ');
+    // In-segment percentage labels (only if the segment is wide enough)
+    if (sbW > 56) {
+      root.append('text').attr('x', sbW / 2).attr('y', y + barH/2 - 4)
+        .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+        .attr('fill', COLORS.ink).attr('font-weight', 700).attr('font-size', 20)
+        .attr('font-family', "'Merriweather', Georgia, serif")
+        .text(fmtPct1(sbPct));
+      root.append('text').attr('x', sbW / 2).attr('y', y + barH/2 + 18)
+        .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+        .attr('fill', COLORS.ink).attr('font-size', 11)
+        .text(fmtSmart(grp.sb));
+    }
+    if (otherW > 80) {
+      root.append('text').attr('x', sbW + otherW/2).attr('y', y + barH/2 - 4)
+        .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+        .attr('fill', '#fff').attr('font-weight', 700).attr('font-size', 22)
+        .attr('font-family', "'Merriweather', Georgia, serif")
+        .text(fmtPct1(otherPct));
+      root.append('text').attr('x', sbW + otherW/2).attr('y', y + barH/2 + 20)
+        .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+        .attr('fill', 'rgba(255,255,255,0.85)').attr('font-size', 11)
+        .text(fmtSmart(grp.other));
+    }
 
-    return;
-  }
+    // 25% goal marker — dashed line spanning the bar height plus a small tag
+    const goalX = xScale(grp.total * GOAL);
+    root.append('line').attr('x1', goalX).attr('x2', goalX)
+      .attr('y1', y - 8).attr('y2', y + barH + 8)
+      .attr('stroke', COLORS.ink).attr('stroke-width', 1.5).attr('stroke-dasharray', '4,3');
+    root.append('text').attr('x', goalX).attr('y', y + barH + 22)
+      .attr('text-anchor', 'middle').attr('font-size', 10)
+      .attr('fill', COLORS.muted).attr('letter-spacing', '0.05em')
+      .text('23% GOAL');
 
-  // Aggregate (all or group)
-  const filterGroup = f.kind === 'group' ? f.value : null;
-  const buckets = { Civilian: { sb: 0, other: 0 }, Defense: { sb: 0, other: 0 } };
-  coSizeData.forEach(d => {
-    if (filterGroup && d.dod_civ !== filterGroup) return;
-    if (d.co_size === 'SMALL BUSINESS') buckets[d.dod_civ].sb += d.obs;
-    else if (d.co_size === 'OTHER THAN SMALL BUSINESS') buckets[d.dod_civ].other += d.obs;
-  });
-  const civTotal = buckets.Civilian.sb + buckets.Civilian.other;
-  const defTotal = buckets.Defense.sb + buckets.Defense.other;
-  const grand = civTotal + defTotal;
-
-  const innerR = 70, midR = 115, outerR = 170;
-  const innerArc = d3.arc().innerRadius(innerR).outerRadius(midR);
-  const outerArc = d3.arc().innerRadius(midR + 4).outerRadius(outerR);
-  const pie = d3.pie().value(d => d.value).sort(null).startAngle(-Math.PI/2).endAngle(Math.PI*3/2);
-
-  let innerData;
-  if (filterGroup === 'Civilian') {
-    innerData = [{ name: 'Civilian', value: civTotal, color: COLORS.civ }];
-  } else if (filterGroup === 'Defense') {
-    innerData = [{ name: 'Defense', value: defTotal, color: COLORS.def }];
-  } else {
-    innerData = [
-      { name: 'Civilian', value: civTotal, color: COLORS.civ },
-      { name: 'Defense', value: defTotal, color: COLORS.def },
-    ];
-  }
-
-  let outerData;
-  if (filterGroup === 'Civilian') {
-    outerData = [
-      { group: 'Civilian', name: 'Small business', value: buckets.Civilian.sb, color: COLORS.civLight },
-      { group: 'Civilian', name: 'Other than small', value: buckets.Civilian.other, color: COLORS.civ },
-    ];
-  } else if (filterGroup === 'Defense') {
-    outerData = [
-      { group: 'Defense', name: 'Small business', value: buckets.Defense.sb, color: '#4a7eb3' },
-      { group: 'Defense', name: 'Other than small', value: buckets.Defense.other, color: COLORS.def },
-    ];
-  } else {
-    outerData = [
-      { group: 'Civilian', name: 'Small business', value: buckets.Civilian.sb, color: COLORS.civLight },
-      { group: 'Civilian', name: 'Other than small', value: buckets.Civilian.other, color: COLORS.civ },
-      { group: 'Defense', name: 'Other than small', value: buckets.Defense.other, color: COLORS.def },
-      { group: 'Defense', name: 'Small business', value: buckets.Defense.sb, color: '#4a7eb3' },
-    ];
-  }
-
-  g.selectAll('.inner-arc').data(pie(innerData)).join('path')
-    .attr('d', innerArc).attr('fill', d => d.data.color)
-    .on('mousemove', (ev, d) => showTip(`<strong>${d.data.name}</strong><span class="tt-val">${fmtB(d.data.value)} · ${fmtPct1(d.data.value/grand)}</span>`, ev))
-    .on('mouseleave', hideTip);
-
-  g.selectAll('.outer-arc').data(pie(outerData)).join('path')
-    .attr('d', outerArc).attr('fill', d => d.data.color)
-    .on('mousemove', (ev, d) => showTip(`<strong>${d.data.group} · ${d.data.name}</strong><span class="tt-val">${fmtB(d.data.value)} · ${fmtPct1(d.data.value/grand)}</span>`, ev))
-    .on('mouseleave', hideTip);
-
-  g.append('text').attr('text-anchor', 'middle').attr('y', -6)
-    .attr('font-family', "'Merriweather', Georgia, serif")
-    .attr('font-size', 24).attr('font-weight', 700).attr('fill', COLORS.ink)
-    .text(fmtB(grand));
-  g.append('text').attr('text-anchor', 'middle').attr('y', 14)
-    .attr('font-size', 11).attr('fill', COLORS.muted)
-    .attr('letter-spacing', '0.08em').text(filterGroup ? filterGroup.toUpperCase() : 'TOTAL OBLIGATIONS');
-
-  // Group labels
-  pie(innerData).forEach(d => {
-    const ang = (d.startAngle + d.endAngle) / 2;
-    const r = outerR + 22;
-    const x = Math.sin(ang) * r;
-    const y = -Math.cos(ang) * r;
-    g.append('text').attr('text-anchor', 'middle').attr('x', x).attr('y', y)
-      .attr('font-size', 13).attr('font-weight', 600).attr('fill', COLORS.ink)
-      .text(d.data.name);
-    g.append('text').attr('text-anchor', 'middle').attr('x', x).attr('y', y + 14)
-      .attr('font-size', 11).attr('fill', COLORS.muted)
-      .text(fmtPct1(d.data.value/grand));
+    // Performance indicator — how this sector compares to 25% goal
+    const delta = (sbPct - GOAL) * 100;
+    const aboveGoal = delta >= 0;
+    const indicator = root.append('text').attr('x', sbW + otherW + 14).attr('y', y + barH/2)
+      .attr('dominant-baseline', 'middle')
+      .attr('font-size', 13).attr('font-weight', 600);
+    indicator.append('tspan').attr('fill', aboveGoal ? '#1a8a55' : '#b5483b')
+      .text((aboveGoal ? '+' : '') + delta.toFixed(1) + ' pp');
+    root.append('text').attr('x', sbW + otherW + 14).attr('y', y + barH/2 + 16)
+      .attr('dominant-baseline', 'middle')
+      .attr('font-size', 10).attr('fill', COLORS.muted)
+      .attr('letter-spacing', '0.05em').text('vs. goal');
   });
 }
 

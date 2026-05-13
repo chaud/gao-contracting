@@ -190,33 +190,6 @@
   <section class="panel hidden" id="panel-purchases" role="tabpanel">
     <div class="panel__grid panel__grid--wide">
       <div class="purchases">
-        <div class="purchases__col purchases__col--civ">
-          <div class="purchases__head">
-            <span class="dot dot--civ"></span>
-            <h2>Civilian agencies</h2>
-            <span class="purchases__total">$301B total</span>
-          </div>
-          <div class="split">
-            <div class="split__item">
-              <div class="split__label">Services</div>
-              <div class="split__value">$249B</div>
-              <div class="split__bar"><span style="width:82.7%; background:#005ea2"></span></div>
-              <div class="split__pct">83%</div>
-            </div>
-            <div class="split__item">
-              <div class="split__label">Products</div>
-              <div class="split__value">$52B</div>
-              <div class="split__bar"><span style="width:17.3%; background:#73b3e7"></span></div>
-              <div class="split__pct">17%</div>
-            </div>
-          </div>
-          <div class="top5">
-            <h3>Top 5 services</h3>
-            <ol class="top5__list" data-list="civ-services"></ol>
-            <h3>Top 5 products</h3>
-            <ol class="top5__list" data-list="civ-products"></ol>
-          </div>
-        </div>
         <div class="purchases__col purchases__col--def">
           <div class="purchases__head">
             <span class="dot dot--def"></span>
@@ -244,6 +217,33 @@
             <ol class="top5__list" data-list="def-products"></ol>
           </div>
         </div>
+        <div class="purchases__col purchases__col--civ">
+          <div class="purchases__head">
+            <span class="dot dot--civ"></span>
+            <h2>Civilian agencies</h2>
+            <span class="purchases__total">$301B total</span>
+          </div>
+          <div class="split">
+            <div class="split__item">
+              <div class="split__label">Services</div>
+              <div class="split__value">$249B</div>
+              <div class="split__bar"><span style="width:82.7%; background:#005ea2"></span></div>
+              <div class="split__pct">83%</div>
+            </div>
+            <div class="split__item">
+              <div class="split__label">Products</div>
+              <div class="split__value">$52B</div>
+              <div class="split__bar"><span style="width:17.3%; background:#73b3e7"></span></div>
+              <div class="split__pct">17%</div>
+            </div>
+          </div>
+          <div class="top5">
+            <h3>Top 5 services</h3>
+            <ol class="top5__list" data-list="civ-services"></ol>
+            <h3>Top 5 products</h3>
+            <ol class="top5__list" data-list="civ-products"></ol>
+          </div>
+        </div>
       </div>
       <aside class="panel__aside panel__aside--narrow">
         <div class="insight">
@@ -265,17 +265,18 @@
         <div class="viz-header">
           <h2 class="viz-title">Who got the contracts?</h2>
           <div class="legend">
-            <span class="legend__item"><i style="background:#005ea2"></i> Small business</span>
+            <span class="legend__item"><i style="background:#73b3e7"></i> Small business</span>
             <span class="legend__item"><i style="background:#1a4480"></i> Other than small</span>
+            <span class="legend__item legend__item--goal"><i class="legend__tick"></i> 23% goal</span>
           </div>
         </div>
         <div id="donut" class="viz-canvas"></div>
-        <p class="viz-note">Inner ring shows the civilian/defense split of all obligations. Outer ring shows how each was awarded by business size.</p>
+        <p class="viz-note">Each bar shows total obligations for the sector; segment widths show the share awarded to small business vs other contractors. The dashed marker indicates the government-wide 23% small-business goal.</p>
       </div>
       <aside class="panel__aside">
         <div class="insight">
           <div class="insight__kicker">Insight</div>
-          <p>The government-wide goal is to award <strong>~25%</strong> of contract dollars to small businesses. FY2025 met that mark in aggregate, though performance varies sharply by agency.</p>
+          <p>The government-wide goal is to award <strong>23%</strong> of contract dollars to small businesses. FY2025 met that mark in aggregate, though performance varies sharply by agency.</p>
         </div>
         <div class="rank-list">
           <div class="rank-list__head">Small-business share by agency</div>
@@ -377,6 +378,14 @@
     </div>
   </div>
 </footer>
+
+<!-- Side tab navigation arrows (desktop) -->
+<button class="nav-arrow nav-arrow--prev" id="nav-prev" aria-label="Previous tab" hidden>
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+<button class="nav-arrow nav-arrow--next" id="nav-next" aria-label="Next tab">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
 
 <!-- Tooltip -->
 <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
