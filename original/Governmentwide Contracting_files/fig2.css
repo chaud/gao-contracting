@@ -1,0 +1,172 @@
+/*****************    Figure 2  ****************/
+.fig2 {
+    grid-area: fig2;
+    
+    display: grid;
+    width: 90%;
+    
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-rows: 60px 30px 120px 60px auto;
+
+    grid-template-areas: 
+        "fig2_title fig2_title fig2_title fig2_title"
+        "fig2_g1_title fig2_g1_title fig2_g2_title fig2_g2_title"
+        "fig2_g1_svc_head fig2_g1_prod_head fig2_g2_svc_head fig2_g2_prod_head"
+        "fig2_g1_bar_head fig2_g1_bar_head fig2_g2_bar_head fig2_g2_bar_head"
+        "fig2_g1_svc_bar fig2_g1_prod_bar fig2_g2_svc_bar fig2_g2_prod_bar"
+        "fig2_g1_svc_list fig2_g1_prod_list fig2_g2_svc_list fig2_g2_prod_list"
+        "fig2_text fig2_text fig2_text fig2_text"
+        "fig2_dl fig2_dl fig2_dl fig2_dl";
+}
+
+.fig2_dl {
+    grid-area: fig2_dl;
+}
+
+.fig2_left {
+    
+}
+
+.fig2_right {
+    border-left: 2px solid black;
+}
+
+.fig2_title {
+    grid-area: fig2_title;
+    margin-bottom: 60px;
+    /* width: 90%; */
+}
+
+.fig2_g1_title {
+    grid-area: fig2_g1_title;
+    background-color: var(--bgdark);
+    font-size: 12;
+    font-weight: bold;
+    padding-top: 10px;
+}
+
+.fig2_g2_title {
+    grid-area: fig2_g2_title;
+    background-color: var(--bgdark);
+    font-size: 12;
+    font-weight: bold;
+    padding-top: 10px;
+}
+
+
+.fig2_g1_svc_head {
+    grid-area: fig2_g1_svc_head;
+    background-color: var(--bgdark);
+
+}
+
+.fig2_g1_prod_head {
+    grid-area: fig2_g1_prod_head;
+    background-color: var(--bgdark);
+    
+}
+
+.fig2_g2_svc_head {
+    grid-area: fig2_g2_svc_head;
+    background-color: var(--bgdark);
+
+}
+
+.fig2_g2_prod_head {
+    grid-area: fig2_g2_prod_head;
+    background-color: var(--bgdark);
+    
+}
+
+.fig2_g1_bar_head {
+    grid-area: fig2_g1_bar_head;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.fig2_g2_bar_head {
+    grid-area: fig2_g2_bar_head;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+
+.fig2_g1_svc_bar {
+    grid-area: fig2_g1_svc_bar;
+    /* display: block; */
+    
+}
+
+.fig2_g1_prod_bar {
+    grid-area: fig2_g1_prod_bar;
+}
+
+
+
+
+.fig2_g2_prod_bar {
+    grid-area: fig2_g2_prod_bar;
+    
+}
+
+.fig2_g2_svc_bar {
+    grid-area: fig2_g2_svc_bar;
+   
+}
+
+.fig2_g1_svc_list {
+    grid-area: fig2_g1_svc_list;
+    font-size: 12;
+}
+
+.fig2_g1_prod_list {
+    grid-area: fig2_g1_prod_list;
+    font-size: 12;
+}
+
+.fig2_g2_svc_list {
+    grid-area: fig2_g2_svc_list;
+    font-size: 12;
+}
+
+.fig2_g2_prod_list {
+    grid-area: fig2_g2_prod_list;
+    font-size: 12;
+}
+
+
+
+.fig2_text {
+    grid-area: fig2_text;
+    margin-left: auto;
+    margin-right: auto;
+    width: 70%;
+}
+
+.fig2_accent {
+    color: var(--accent);
+    font-size: 24px;
+    font-weight: bold;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.fig2_label {
+    font-size: 12px;
+    margin-bottom: 0;
+}
+
+.fig2_label_small {
+    font-size: 9px;
+    margin-top:0;
+}
+
+.fig2_note {
+    font-size: 9px;
+    margin-top: -10px;
+    font-weight: 200;
+}
+
+.bar_labels {
+    font-size: 9px;
+}

@@ -1,0 +1,81 @@
+/* bubble.js */
+.fig4 {
+    grid-area: fig4;
+
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    grid-template-rows: auto;
+    grid-template-areas: 
+        "fig4_title fig4_title"
+        "fig4_text fig4_plot"
+        'fig4_dl fig4_dl';  
+
+    
+}
+
+.fig4_title {
+    grid-area: fig4_title;
+}
+
+.fig4_text {
+    grid-area: fig4_text;
+    justify-self: center;
+    padding: 10%;
+    
+}
+
+.fig4_plot {
+    grid-area: fig4_plot;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto;
+    grid-template-areas: 
+        "fig4_competed fig4_labels fig4_notcompeted";
+
+        margin-top: 30px;
+    
+}
+
+.fig4_dl {
+    grid-area: fig4_dl;
+}
+
+.fig4_competed {
+    grid-area: fig4_competed;
+    min-height: 400px;
+}
+
+.fig4_labels {
+    grid-area: fig4_labels;
+    
+    
+}
+
+
+.fig4_notcompeted {
+    grid-area: fig4_notcompeted;
+}
+
+.bubble_sum {
+    
+    font-size: 14px;
+    color: black;
+    /* line-height: 12px; */
+    text-align: center;
+    font-weight: normal;
+
+}
+
+.bubble_cat {
+    font-size: 14px;
+    fill: var(--accent);
+    font-weight: bold;
+    text-align: center;
+}
+
+.pricingLabels {
+    width: 100%;
+    text-anchor: middle;
+    
+    
+}

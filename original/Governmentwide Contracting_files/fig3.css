@@ -1,0 +1,42 @@
+/* figure 3 */
+.fig3 {
+    grid-area: fig3;
+
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    grid-template-rows: auto;
+    grid-template-areas: 
+        "fig3_title fig3_title"
+        "fig3_pie fig3_text"
+        "fig3_dl fig3_dl";
+
+        
+}
+
+.fig3_title {
+    grid-area: fig3_title;
+    height: 80px;
+}
+
+.fig3_pie {
+    grid-area: fig3_pie;
+    justify-self: center;
+}
+
+.fig3_text {
+    grid-area: fig3_text;
+    justify-self: center;
+    width: 60%;
+}
+
+.fig3_dl {
+    grid-area: fig3_dl;
+}
+
+.pie_text {
+    
+    font-size: 12px;
+    font-weight: Normal;
+    /* font-family: "Open Sans", verdana, arial, sans-serif; */
+
+}

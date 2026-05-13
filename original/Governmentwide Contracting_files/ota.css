@@ -1,0 +1,45 @@
+/* figure 5 */
+.fig5 {
+    grid-area: fig5;
+
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    grid-template-rows: auto;
+    grid-template-areas: 
+        "fig5_title fig5_title"
+        "fig5_plot fig5_text"
+        "fig5_dl fig5_dl";       
+}
+
+.fig5_title {
+    grid-area: fig5_title;
+    margin-bottom: 60px;
+}
+
+.fig5_plot {
+    grid-area: fig5_plot;
+}
+
+.fig5_text {
+    grid-area: fig5_text;
+}
+.fig5_dl {
+    grid-area: fig5_dl;
+}
+
+.line {
+    fill: none;
+    stroke: var(--secondary);
+    stroke-width: 2px;
+  }
+
+.ota_xaxis {
+    /* font: 9px; */
+    
+}
+
+.ota_plot_title {
+    text-anchor: middle;
+    font-weight: bold;
+    font-size: 18;
+}

@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Government-Wide Contracting · FY2025 Snapshot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Merriweather:wght@400;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/dashboard.css">
+</head>
+<body>
+
+<!-- Official US government banner (USWDS pattern) -->
+<section class="usa-banner" aria-label="Official government website">
+  <div class="usa-banner__inner">
+    <svg class="usa-banner__flag" viewBox="0 0 16 11" aria-hidden="true">
+      <rect width="16" height="11" fill="#fff"/>
+      <rect width="16" height="0.85" y="0" fill="#b22234"/>
+      <rect width="16" height="0.85" y="1.7" fill="#b22234"/>
+      <rect width="16" height="0.85" y="3.4" fill="#b22234"/>
+      <rect width="16" height="0.85" y="5.1" fill="#b22234"/>
+      <rect width="16" height="0.85" y="6.8" fill="#b22234"/>
+      <rect width="16" height="0.85" y="8.5" fill="#b22234"/>
+      <rect width="16" height="0.85" y="10.2" fill="#b22234"/>
+      <rect width="6.4" height="5.95" fill="#3c3b6e"/>
+    </svg>
+    <p>An un-official analysis of U.S. government contracting data - This is a design mockup <b>not an official government website</b></p>
+    <button class="usa-banner__btn" aria-expanded="false" aria-controls="banner-detail">
+      Here's how you know
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
+    </button>
+  </div>
+  <div class="usa-banner__detail" id="banner-detail" hidden>
+    <div class="usa-banner__detail-inner">
+      <div>
+        <strong>Official websites use .gov</strong>
+        <p>A <strong>.gov</strong> website belongs to an official government organization in the United States.</p>
+      </div>
+      <div>
+        <strong>Secure .gov websites use HTTPS</strong>
+        <p>A <strong>lock</strong> or <strong>https://</strong> means you've safely connected to the .gov website.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Page header -->
+<header class="page-header">
+  <div class="container header-inner">
+    <div class="brand">
+      <div class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40">
+          <circle cx="20" cy="20" r="19" fill="#1a4480"/>
+          <path d="M11 13 L20 8 L29 13 L29 22 Q29 28 20 32 Q11 28 11 22 Z" fill="#fff" opacity="0.95"/>
+          <path d="M20 13 L20 28 M14 18 L26 18 M14 23 L26 23" stroke="#1a4480" stroke-width="1.5" fill="none"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand__eyebrow">Federal Procurement Data Analysis</div>
+        <h1 class="brand__title">Government-Wide Contracting</h1>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div class="meta-item">
+        <span class="meta-item__label">Fiscal year</span>
+        <span class="meta-item__value">2025</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-item__label">Updated</span>
+        <span class="meta-item__value">April 2026</span>
+      </div>
+      <a class="usa-button usa-button--outline" href="#">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        Download data
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- KPI strip - always visible context -->
+<section class="kpi-strip">
+  <div class="container kpi-grid">
+    <article class="kpi kpi--primary">
+      <div class="kpi__label">Total contract obligations</div>
+      <div class="kpi__value">$793<span class="kpi__unit">B</span></div>
+      <div class="kpi__delta kpi__delta--up">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14l5-5 5 5" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+        +$17.8B vs FY2024
+      </div>
+    </article>
+    <article class="kpi">
+      <div class="kpi__label">Defense share</div>
+      <div class="kpi__value">$492<span class="kpi__unit">B</span></div>
+      <div class="kpi__sub">62% of all obligations</div>
+    </article>
+    <article class="kpi">
+      <div class="kpi__label">Competed contracts</div>
+      <div class="kpi__value">66<span class="kpi__unit">%</span></div>
+      <div class="kpi__sub">Civilian 89% · Defense 52%</div>
+    </article>
+    <article class="kpi">
+      <div class="kpi__label">Small-business award rate</div>
+      <div class="kpi__value">25<span class="kpi__unit">%</span></div>
+      <div class="kpi__sub">Government-wide goal achieved</div>
+    </article>
+  </div>
+</section>
+
+<!-- Tab navigation -->
+<nav class="tab-nav" role="tablist">
+  <div class="container tab-nav__inner">
+    <div class="tab-nav__tabs">
+      <button class="tab" role="tab" aria-selected="true" data-tab="agencies">
+        <span class="tab__num">01</span>
+        <span class="tab__label">Which agencies</span>
+      </button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="purchases">
+        <span class="tab__num">02</span>
+        <span class="tab__label">What they bought</span>
+      </button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="vendors">
+        <span class="tab__num">03</span>
+        <span class="tab__label">Who got contracts</span>
+      </button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="competition">
+        <span class="tab__num">04</span>
+        <span class="tab__label">How they bought</span>
+      </button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="ota">
+        <span class="tab__num">05</span>
+        <span class="tab__label">OTA trends</span>
+      </button>
+    </div>
+    <div class="agency-picker">
+      <label for="agency-select" class="agency-picker__label">Agency</label>
+      <div class="agency-picker__field">
+        <span class="agency-picker__swatch" id="agency-swatch"></span>
+        <select id="agency-select" class="agency-picker__select">
+          <option value="all">All agencies</option>
+          <optgroup label="Groups">
+            <option value="group:Civilian">All Civilian</option>
+            <option value="group:Defense">All Defense</option>
+          </optgroup>
+          <optgroup label="Civilian agencies" id="og-civ"></optgroup>
+          <optgroup label="Defense agencies" id="og-def"></optgroup>
+        </select>
+        <svg class="agency-picker__caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Main panels -->
+<main class="container main">
+
+  <!-- 01 AGENCIES -->
+  <section class="panel" id="panel-agencies" role="tabpanel">
+    <div class="panel__full">
+      <div class="viz-header">
+        <div>
+          <h2 class="viz-title">Which agencies are responsible for the most contract dollars?</h2>
+          <p class="viz-subtitle">Each tile is one department, sized by total FY2025 obligations. Click any tile or use the Agency selector to filter every chart in the dashboard.</p>
+        </div>
+        <div class="viz-toggle" role="group" aria-label="Filter view">
+          <button class="chip chip--active" data-filter="all">All agencies</button>
+          <button class="chip" data-filter="Defense">Defense only</button>
+          <button class="chip" data-filter="Civilian">Civilian only</button>
+        </div>
+      </div>
+      <div id="treemap" class="viz-canvas viz-canvas--tall" aria-label="Treemap of agency obligations"></div>
+      <div class="insight-strip">
+        <div class="insight-strip__item">
+          <div class="insight-strip__kicker">Defense vs. civilian</div>
+          <p>Defense agencies obligated <strong>$492B</strong> — roughly <strong>1.6×</strong> civilian spending.</p>
+        </div>
+        <div class="insight-strip__item">
+          <div class="insight-strip__kicker">Top single agency</div>
+          <p>The <strong>Navy ($176B)</strong> obligated more than every civilian department except VA.</p>
+        </div>
+        <div class="insight-strip__item">
+          <div class="insight-strip__kicker">Concentration</div>
+          <p>The top <strong>5 departments</strong> account for <strong>71%</strong> of all contract dollars.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 PURCHASES -->
+  <section class="panel hidden" id="panel-purchases" role="tabpanel">
+    <div class="panel__grid panel__grid--wide">
+      <div class="purchases">
+        <div class="purchases__col purchases__col--civ">
+          <div class="purchases__head">
+            <span class="dot dot--civ"></span>
+            <h2>Civilian agencies</h2>
+            <span class="purchases__total">$301B total</span>
+          </div>
+          <div class="split">
+            <div class="split__item">
+              <div class="split__label">Services</div>
+              <div class="split__value">$249B</div>
+              <div class="split__bar"><span style="width:82.7%; background:#005ea2"></span></div>
+              <div class="split__pct">83%</div>
+            </div>
+            <div class="split__item">
+              <div class="split__label">Products</div>
+              <div class="split__value">$52B</div>
+              <div class="split__bar"><span style="width:17.3%; background:#73b3e7"></span></div>
+              <div class="split__pct">17%</div>
+            </div>
+          </div>
+          <div class="top5">
+            <h3>Top 5 services</h3>
+            <ol class="top5__list" data-list="civ-services"></ol>
+            <h3>Top 5 products</h3>
+            <ol class="top5__list" data-list="civ-products"></ol>
+          </div>
+        </div>
+        <div class="purchases__col purchases__col--def">
+          <div class="purchases__head">
+            <span class="dot dot--def"></span>
+            <h2>Defense agencies</h2>
+            <span class="purchases__total">$492B total</span>
+          </div>
+          <div class="split">
+            <div class="split__item">
+              <div class="split__label">Services</div>
+              <div class="split__value">$238B</div>
+              <div class="split__bar"><span style="width:48.4%; background:#1a4480"></span></div>
+              <div class="split__pct">48%</div>
+            </div>
+            <div class="split__item">
+              <div class="split__label">Products</div>
+              <div class="split__value">$253B</div>
+              <div class="split__bar"><span style="width:51.6%; background:#162e51"></span></div>
+              <div class="split__pct">52%</div>
+            </div>
+          </div>
+          <div class="top5">
+            <h3>Top 5 services</h3>
+            <ol class="top5__list" data-list="def-services"></ol>
+            <h3>Top 5 products</h3>
+            <ol class="top5__list" data-list="def-products"></ol>
+          </div>
+        </div>
+      </div>
+      <aside class="panel__aside panel__aside--narrow">
+        <div class="insight">
+          <div class="insight__kicker">Insight</div>
+          <p>Civilian spending skews heavily toward <strong>services</strong> — healthcare, professional support, IT labor. Defense splits nearly evenly between services and high-cost <strong>products</strong> like aircraft, ships, and missiles.</p>
+        </div>
+        <div class="callout">
+          <div class="callout__big">5×</div>
+          <div class="callout__text">Ratio of civilian services to civilian products</div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 03 VENDORS -->
+  <section class="panel hidden" id="panel-vendors" role="tabpanel">
+    <div class="panel__grid">
+      <div class="panel__viz">
+        <div class="viz-header">
+          <h2 class="viz-title">Who got the contracts?</h2>
+          <div class="legend">
+            <span class="legend__item"><i style="background:#005ea2"></i> Small business</span>
+            <span class="legend__item"><i style="background:#1a4480"></i> Other than small</span>
+          </div>
+        </div>
+        <div id="donut" class="viz-canvas"></div>
+        <p class="viz-note">Inner ring shows the civilian/defense split of all obligations. Outer ring shows how each was awarded by business size.</p>
+      </div>
+      <aside class="panel__aside">
+        <div class="insight">
+          <div class="insight__kicker">Insight</div>
+          <p>The government-wide goal is to award <strong>~25%</strong> of contract dollars to small businesses. FY2025 met that mark in aggregate, though performance varies sharply by agency.</p>
+        </div>
+        <div class="rank-list">
+          <div class="rank-list__head">Small-business share by agency</div>
+          <ol id="sb-rank"></ol>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 04 COMPETITION -->
+  <section class="panel hidden" id="panel-competition" role="tabpanel">
+    <div class="panel__grid">
+      <div class="panel__viz">
+        <div class="viz-header">
+          <h2 class="viz-title">How did they buy?</h2>
+          <div class="legend">
+            <span class="legend__item"><i style="background:#1a4480"></i> Defense</span>
+            <span class="legend__item"><i style="background:#005ea2"></i> Civilian</span>
+          </div>
+        </div>
+        <div id="competition" class="viz-canvas"></div>
+        <p class="viz-note">Bubble area is proportional to dollars obligated. Pricing type indicates risk allocation — fixed-price puts more risk on contractors, cost-type on the government.</p>
+      </div>
+      <aside class="panel__aside">
+        <div class="insight">
+          <div class="insight__kicker">Insight</div>
+          <p>Civilian agencies competed <strong>89%</strong> of obligations versus Defense at <strong>52%</strong>. Sole-source defense buys (e.g. specialized weapons platforms) account for most of the gap.</p>
+        </div>
+        <div class="stat-row">
+          <div class="stat-row__item">
+            <div class="stat-row__pct" style="--pct: 89%; --c: #005ea2">89%</div>
+            <div class="stat-row__lbl">Civilian competed</div>
+          </div>
+          <div class="stat-row__item">
+            <div class="stat-row__pct" style="--pct: 52%; --c: #1a4480">52%</div>
+            <div class="stat-row__lbl">Defense competed</div>
+          </div>
+          <div class="stat-row__item">
+            <div class="stat-row__pct" style="--pct: 66%; --c: #00bde3">66%</div>
+            <div class="stat-row__lbl">Government-wide</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 05 OTA -->
+  <section class="panel hidden" id="panel-ota" role="tabpanel">
+    <div class="panel__grid">
+      <div class="panel__viz">
+        <div class="viz-header">
+          <h2 class="viz-title">What is the trend in spending through Other Transaction Agreements?</h2>
+          <div class="viz-toggle" role="group" aria-label="OTA view">
+            <button class="chip chip--active" data-ota="total">Total</button>
+            <button class="chip" data-ota="stacked">By department</button>
+          </div>
+        </div>
+        <div id="ota" class="viz-canvas"></div>
+        <p class="viz-note">OTAs are a flexible alternative to traditional contracts. These figures are not included in the $793B total above.</p>
+      </div>
+      <aside class="panel__aside">
+        <div class="insight">
+          <div class="insight__kicker">Insight</div>
+          <p>OTA spending reached <strong>$18.2B</strong> in FY2025 — down $700M from FY2024 but still well above pre-2023 levels. The Army and Air Force dominate the category.</p>
+        </div>
+        <div class="callout">
+          <div class="callout__big">$18.2B</div>
+          <div class="callout__text">FY2025 OTA obligations</div>
+          <div class="callout__delta">−$0.7B vs FY2024</div>
+        </div>
+        <div class="rank-list">
+          <div class="rank-list__head">FY2025 share by department</div>
+          <ol id="ota-rank"></ol>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+</main>
+
+<footer class="page-footer">
+  <div class="container footer-inner">
+    <div>
+      <div class="footer-logo">
+        <svg viewBox="0 0 40 40" width="32" height="32" aria-hidden="true">
+          <circle cx="20" cy="20" r="19" fill="#1a4480"/>
+          <path d="M11 13 L20 8 L29 13 L29 22 Q29 28 20 32 Q11 28 11 22 Z" fill="#fff" opacity="0.95"/>
+        </svg>
+        <strong>Federal Contracting Snapshot</strong>
+      </div>
+      <p class="footer-source">Source: GAO analysis of Federal Procurement Data System data as of April 2026.</p>
+      <p class="footer-source">All obligation amounts are presented in constant FY 2025 dollars. Figures exclude missing or "other" values that represent less than one percent of total obligations.</p>
+    </div>
+    <div class="footer-links">
+      <a href="#">Learn more about federal contracting</a>
+      <a href="#">Data dictionary</a>
+      <a href="#">Methodology</a>
+      <a href="#">Download full dataset (CSV)</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Tooltip -->
+<div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+
+<script src="assets/d3.min.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/dashboard.js"></script>
+</body>
+</html>
