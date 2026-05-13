@@ -514,7 +514,7 @@ function renderCompetition() {
   const el = document.getElementById('competition');
   el.innerHTML = '';
   const W = el.clientWidth || 800;
-  const H = 420;
+  const H = 460;
   const f = state.filter;
 
   const pricings = ['FIXED PRICE', 'COST TYPE', 'TIME AND MATERIAL AND LABOR HOUR'];
@@ -552,7 +552,7 @@ function renderCompetition() {
   let maxV = 0;
   groups.forEach(g => ['COMPETED','NOT COMPETED'].forEach(c => pricings.forEach(p => { if (data[g][c][p] > maxV) maxV = data[g][c][p]; })));
   if (maxV === 0) maxV = 1;
-  const rScale = d3.scaleSqrt().domain([0, maxV]).range([0, 56]);
+  const rScale = d3.scaleSqrt().domain([0, maxV]).range([0, 42]);
 
   // Column titles + totals
   colTitles.forEach((t, i) => {
@@ -571,7 +571,7 @@ function renderCompetition() {
   svg.append('line').attr('x1', W/2).attr('x2', W/2).attr('y1', 56).attr('y2', H - 60)
     .attr('stroke', COLORS.line).attr('stroke-dasharray', '3,3');
 
-  const yRow = (i) => 110 + i * 80;
+  const yRow = (i) => 150 + i * 92;
   const subOffset = colW / 4 - 8;
   const singleGroup = groups.length === 1;
 
@@ -580,16 +580,16 @@ function renderCompetition() {
 
     // group sublabels
     if (!singleGroup) {
-      svg.append('text').attr('x', cx - subOffset).attr('y', 72).attr('text-anchor', 'middle')
+      svg.append('text').attr('x', cx - subOffset).attr('y', 86).attr('text-anchor', 'middle')
         .attr('font-size', 11).attr('font-weight', 700).attr('fill', COLORS.civ)
         .attr('letter-spacing', '0.08em').text('CIVILIAN');
-      svg.append('text').attr('x', cx + subOffset).attr('y', 72).attr('text-anchor', 'middle')
+      svg.append('text').attr('x', cx + subOffset).attr('y', 86).attr('text-anchor', 'middle')
         .attr('font-size', 11).attr('font-weight', 700).attr('fill', COLORS.def)
         .attr('letter-spacing', '0.08em').text('DEFENSE');
     } else {
       const gColor = groups[0] === 'Defense' ? COLORS.def : COLORS.civ;
       const lbl = deptFilter ? `${deptFilter.toUpperCase()} · ${groups[0].toUpperCase()}` : groups[0].toUpperCase();
-      svg.append('text').attr('x', cx).attr('y', 72).attr('text-anchor', 'middle')
+      svg.append('text').attr('x', cx).attr('y', 86).attr('text-anchor', 'middle')
         .attr('font-size', 11).attr('font-weight', 700).attr('fill', gColor)
         .attr('letter-spacing', '0.08em').text(lbl);
     }
@@ -624,9 +624,6 @@ function renderCompetition() {
     });
   });
 
-  svg.append('text').attr('x', 12).attr('y', H - 36)
-    .attr('font-size', 11).attr('fill', COLORS.muted)
-    .text('Bubble area is proportional to dollars obligated.');
 }
 
 // ============================================================

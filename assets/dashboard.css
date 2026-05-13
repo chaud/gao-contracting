@@ -868,4 +868,27 @@ html, body {
   .kpi-grid { grid-template-columns: 1fr; }
   .brand__title { font-size: 22px; }
   .kpi--primary .kpi__value { font-size: 40px; }
+
+  /* Stack tab bar and agency picker into two rows */
+  .tab-nav__inner { flex-direction: column; align-items: stretch; }
+  .tab-nav__tabs {
+    border-bottom: 1px solid var(--c-line);
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab {
+    padding: 12px 14px;
+    gap: 8px;
+    font-size: 13px;
+    scroll-snap-align: start;
+  }
+  .tab__num { font-size: 11px; }
+  .agency-picker {
+    border-left: 0;
+    padding: 10px 0;
+    gap: 12px;
+    justify-content: space-between;
+  }
+  .agency-picker__field { flex: 1; min-width: 0; }
+  .agency-picker__select { min-width: 0; width: 100%; padding-right: 24px; }
 }
