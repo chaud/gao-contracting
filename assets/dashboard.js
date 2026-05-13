@@ -872,6 +872,73 @@ function renderOTARank() {
   `).join('');
 }
 
+// Competition rate by pricing type — what share of dollars in each
+// pricing bucket was awarded competitively. Respects global filter.
+const PRICING_LABEL = {
+  'FIXED PRICE': 'Fixed price',
+  'COST TYPE': 'Cost type',
+  'TIME AND MATERIAL AND LABOR HOUR': 'T&M / labor hour',
+};
+function renderPricingCompetition() {
+  const list = document.getElementById('pricing-comp-rank');
+  if (!list) return;
+  const f = state.filter;
+  let rows = compData.filter(d => PRICING_LABEL[d.pricing]);
+  if (f.kind === 'group') rows = rows.filter(d => d.dod_civ === f.value);
+  if (f.kind === 'dept') rows = rows.filter(d => d.dept === f.value);
+
+  const stats = Object.keys(PRICING_LABEL).map(p => {
+    const competed = d3.sum(rows.filter(d => d.pricing === p && d.competed === 'COMPETED'), d => d.obs);
+    const notc = d3.sum(rows.filter(d => d.pricing === p && d.competed === 'NOT COMPETED'), d => d.obs);
+    const total = competed + notc;
+    return { pricing: p, label: PRICING_LABEL[p], competed, total, rate: total > 0 ? competed / total : 0 };
+  }).filter(s => s.total > 0).sort((a, b) => b.rate - a.rate);
+
+  if (stats.length === 0) {
+    list.innerHTML = '<li style="color:var(--c-ink-faint); font-style:italic; padding:14px 16px">No data for this filter.</li>';
+    return;
+  }
+  list.innerHTML = stats.map((s, i) => `
+    <li>
+      <span class="rank">${String(i+1).padStart(2, '0')}</span>
+      <span class="name">${s.label}</span>
+      <span class="val">${(s.rate * 100).toFixed(1)}%</span>
+      <span class="bar-fill"><span style="width:${(s.rate * 100).toFixed(1)}%; background:${COLORS.civ}"></span></span>
+    </li>
+  `).join('');
+}
+
+// OTA share of each department's total contracting (FY2025). Surfaces
+// who *leans on* OTAs the most, not just absolute dollar size.
+function renderOTAShare() {
+  const list = document.getElementById('ota-share-rank');
+  if (!list) return;
+  const f = state.filter;
+  let otaRows = otaData.filter(d => d.fy === 2025);
+  if (f.kind === 'group') otaRows = otaRows.filter(d => dodLU[d.dept] === f.value);
+  if (f.kind === 'dept') otaRows = otaRows.filter(d => d.dept === f.value);
+
+  const rows = otaRows.map(r => {
+    const dept = deptData.find(x => x.dept === r.dept);
+    const total = dept ? dept.obs : 0;
+    return { dept: r.dept, ota: r.obs, total, share: total > 0 ? r.obs / total : 0 };
+  }).filter(d => d.total > 0).sort((a, b) => b.share - a.share);
+
+  if (rows.length === 0) {
+    list.innerHTML = '<li style="color:var(--c-ink-faint); font-style:italic; padding:14px 16px">No OTA data for this filter.</li>';
+    return;
+  }
+  const maxShare = rows[0].share || 1;
+  list.innerHTML = rows.map((d, i) => `
+    <li>
+      <span class="rank">${String(i+1).padStart(2, '0')}</span>
+      <span class="name"><span class="name__tag" style="background:${dodLU[d.dept] === 'Defense' ? COLORS.def : COLORS.civ}"></span>${d.dept}</span>
+      <span class="val">${(d.share * 100).toFixed(1)}%</span>
+      <span class="bar-fill"><span style="width:${(d.share / maxShare * 100).toFixed(1)}%; background:${dodLU[d.dept] === 'Defense' ? COLORS.def : COLORS.civ}"></span></span>
+    </li>
+  `).join('');
+}
+
 // ============================================================
 // Hero KPI strip — currently only the small-business rate is computed
 // from data; other KPIs in the strip are static markup.
@@ -908,8 +975,10 @@ function renderAll() {
   renderDonut();
   renderSBRank();
   renderCompetition();
+  renderPricingCompetition();
   renderOTA();
   renderOTARank();
+  renderOTAShare();
 }
 
 populateAgencySelect();
