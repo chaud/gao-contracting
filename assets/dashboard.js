@@ -34,6 +34,7 @@ const state = { filter: { kind: 'all', value: 'all' } };
 function setFilter(kind, value) {
   state.filter = { kind, value };
   syncFilterUI();
+  updateHash();
   renderAll();
 }
 
@@ -42,6 +43,7 @@ function clearFilter() { setFilter('all', 'all'); }
 function syncFilterUI() {
   const select = document.getElementById('agency-select');
   const swatch = document.getElementById('agency-swatch');
+  const display = document.getElementById('agency-display');
   const picker = document.querySelector('.agency-picker');
 
   const f = state.filter;
@@ -57,6 +59,12 @@ function syncFilterUI() {
   }
   select.value = selectValue;
   swatch.style.background = swatchColor;
+  // Mirror the selected option's text into the visible display element
+  // since the real <select> sits transparent on top of the field.
+  if (display) {
+    const opt = select.options[select.selectedIndex];
+    display.textContent = opt ? opt.text : 'All agencies';
+  }
   picker.classList.toggle('agency-picker--active', f.kind !== 'all');
 
   // sync chips
@@ -123,15 +131,48 @@ function updateNavArrows() {
   navPrev.hidden = idx <= 0;
   navNext.hidden = idx >= tabs.length - 1;
 }
-function selectTab(t, { updateHash = true } = {}) {
-  tabs.forEach(x => x.setAttribute('aria-selected', 'false'));
-  t.setAttribute('aria-selected', 'true');
-  const key = t.dataset.tab;
-  Object.entries(panels).forEach(([k, el]) => el.classList.toggle('hidden', k !== key));
-  if (updateHash && location.hash.slice(1) !== key) {
-    history.pushState({ tab: key }, '', '#' + key);
+
+// Read/write URL hash without growing history. Format:
+//   #<tab>[&agency=<kind>:<value>]
+// e.g. #purchases, #vendors&agency=group:Defense, #ota&agency=dept:Navy
+function getHashState() {
+  const raw = location.hash.slice(1);
+  if (!raw) return {};
+  const parts = raw.split('&');
+  const tab = parts[0] || null;
+  let agency = null;
+  for (let i = 1; i < parts.length; i++) {
+    const [k, v] = parts[i].split('=');
+    if (k === 'agency' && v) agency = decodeURIComponent(v);
   }
+  return { tab, agency };
+}
+function updateHash() {
+  const sel = Array.from(tabs).find(t => t.getAttribute('aria-selected') === 'true');
+  if (!sel) return;
+  let hash = '#' + sel.dataset.tab;
+  const f = state.filter;
+  if (f.kind !== 'all') {
+    hash += '&agency=' + encodeURIComponent(f.kind + ':' + f.value);
+  }
+  if (location.hash !== hash) {
+    history.replaceState(null, '', hash);
+  }
+}
+
+function applyTabKey(key) {
+  const target = Array.from(tabs).find(t => t.dataset.tab === key);
+  if (!target) return false;
+  tabs.forEach(x => x.setAttribute('aria-selected', 'false'));
+  target.setAttribute('aria-selected', 'true');
+  Object.entries(panels).forEach(([k, el]) => el.classList.toggle('hidden', k !== key));
   updateNavArrows();
+  return true;
+}
+
+function selectTab(t) {
+  applyTabKey(t.dataset.tab);
+  updateHash();
   renderAll();
 }
 tabs.forEach(t => t.addEventListener('click', () => selectTab(t)));
@@ -144,16 +185,24 @@ navNext.addEventListener('click', () => {
   if (idx < tabs.length - 1) selectTab(tabs[idx + 1]);
 });
 
-// Sync with URL hash (initial load + back/forward)
+// Sync state from URL hash (initial load + manual hash edit). Avoids
+// calling selectTab/setFilter to keep this idempotent and prevent
+// repeated history writes.
 function selectFromHash() {
-  const key = location.hash.slice(1);
-  const target = Array.from(tabs).find(t => t.dataset.tab === key);
-  if (target && target.getAttribute('aria-selected') !== 'true') {
-    selectTab(target, { updateHash: false });
+  const { tab, agency } = getHashState();
+  if (tab) applyTabKey(tab);
+  if (agency) {
+    const idx = agency.indexOf(':');
+    if (idx > 0) {
+      state.filter = { kind: agency.slice(0, idx), value: agency.slice(idx + 1) };
+    }
+  } else {
+    state.filter = { kind: 'all', value: 'all' };
   }
+  syncFilterUI();
+  renderAll();
 }
 window.addEventListener('hashchange', selectFromHash);
-if (location.hash) selectFromHash();
 updateNavArrows();
 
 // ============ Filter chips (treemap) ============
@@ -358,17 +407,27 @@ function fillPurchasesSide(side, deptKey, active) {
 
   const svcEl = document.querySelector(`[data-list="${svcKey}"]`);
   const prodEl = document.querySelector(`[data-list="${prodKey}"]`);
-  const renderList = items => items.length === 0
-    ? '<li style="color:var(--c-ink-faint); font-style:italic">No data available</li>'
-    : items.map((d, i) => `
-      <li>
-        <span class="rank">${i+1}</span>
-        <span class="desc">${titlecase(d.psc_desc)}</span>
-        <span class="val">${fmtSmart(d.obs)}</span>
-      </li>
-    `).join('');
-  svcEl.innerHTML = renderList(svcList);
-  prodEl.innerHTML = renderList(prodList);
+  const colors = isCiv
+    ? { svc: '#005ea2', prod: '#73b3e7' }
+    : { svc: '#1a4480', prod: '#162e51' };
+  const renderList = (items, color) => {
+    if (items.length === 0) {
+      return '<li class="top5__empty">No data available</li>';
+    }
+    const max = d3.max(items, d => d.obs) || 1;
+    return items.map((d, i) => {
+      const pct = (d.obs / max * 100).toFixed(1);
+      return `
+        <li>
+          <span class="rank">${i+1}</span>
+          <span class="desc">${titlecase(d.psc_desc)}</span>
+          <span class="top5__bar"><span style="width:${pct}%; background:${color}"></span></span>
+          <span class="val">${fmtSmart(d.obs)}</span>
+        </li>`;
+    }).join('');
+  };
+  svcEl.innerHTML = renderList(svcList, colors.svc);
+  prodEl.innerHTML = renderList(prodList, colors.prod);
 }
 
 function titlecase(s) {
@@ -631,7 +690,9 @@ function renderCompetition() {
       }
       groups.forEach((grp, gIdx) => {
         const val = data[grp][compKey][p];
-        const r = rScale(val);
+        // Sums can be negative (deobligations/corrections); clamp so the
+        // radius doesn't go negative and break SVG parsing.
+        const r = rScale(Math.max(0, val));
         const bx = singleGroup ? cx : (cx + (gIdx === 0 ? -subOffset : subOffset));
         svg.append('circle').attr('cx', bx).attr('cy', y).attr('r', r)
           .attr('fill', grp === 'Defense' ? COLORS.def : COLORS.civ)
@@ -812,6 +873,32 @@ function renderOTARank() {
 }
 
 // ============================================================
+// Hero KPI strip — currently only the small-business rate is computed
+// from data; other KPIs in the strip are static markup.
+// ============================================================
+const SB_GOAL = 0.23;
+function renderHeroKPIs() {
+  const sb = d3.sum(coSizeData.filter(d => d.co_size === 'SMALL BUSINESS'), d => d.obs);
+  const other = d3.sum(coSizeData.filter(d => d.co_size === 'OTHER THAN SMALL BUSINESS'), d => d.obs);
+  const total = sb + other;
+  const rate = total > 0 ? sb / total : 0;
+
+  const valueEl = document.getElementById('kpi-sb-value');
+  const subEl = document.getElementById('kpi-sb-sub');
+  if (valueEl) {
+    valueEl.innerHTML = (rate * 100).toFixed(0) + '<span class="kpi__unit">%</span>';
+  }
+  if (subEl) {
+    const deltaPp = (rate - SB_GOAL) * 100;
+    if (deltaPp >= 0) {
+      subEl.textContent = `Met ${(SB_GOAL * 100).toFixed(0)}% government-wide goal`;
+    } else {
+      subEl.textContent = `${Math.abs(deltaPp).toFixed(1)} pp below ${(SB_GOAL * 100).toFixed(0)}% goal`;
+    }
+  }
+}
+
+// ============================================================
 // Render orchestration
 // ============================================================
 function renderAll() {
@@ -827,8 +914,17 @@ function renderAll() {
 
 populateAgencySelect();
 bindAgencySelect();
-syncFilterUI();
-renderAll();
+renderHeroKPIs();
+// Initial render. selectFromHash handles syncing UI + rendering when a
+// hash is present; otherwise we render once with default state. Both
+// paths run after the file's `let` declarations (e.g. otaMode) so
+// render callbacks won't hit a temporal-dead-zone reference.
+if (location.hash) {
+  selectFromHash();
+} else {
+  syncFilterUI();
+  renderAll();
+}
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);

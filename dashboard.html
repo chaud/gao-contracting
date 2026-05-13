@@ -101,8 +101,8 @@
     </article>
     <article class="kpi">
       <div class="kpi__label">Small-business award rate</div>
-      <div class="kpi__value">25<span class="kpi__unit">%</span></div>
-      <div class="kpi__sub">Government-wide goal achieved</div>
+      <div class="kpi__value" id="kpi-sb-value">—</div>
+      <div class="kpi__sub" id="kpi-sb-sub"></div>
     </article>
   </div>
 </section>
@@ -136,6 +136,7 @@
       <label for="agency-select" class="agency-picker__label">Agency</label>
       <div class="agency-picker__field">
         <span class="agency-picker__swatch" id="agency-swatch"></span>
+        <span class="agency-picker__display" id="agency-display">All agencies</span>
         <select id="agency-select" class="agency-picker__select">
           <option value="all">All agencies</option>
           <optgroup label="Groups">

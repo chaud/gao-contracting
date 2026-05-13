@@ -308,6 +308,7 @@ html, body {
   border-radius: var(--r-md);
   padding: 6px 10px 6px 10px;
   position: relative;
+  cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .agency-picker__field:hover { border-color: var(--c-primary); }
@@ -321,8 +322,13 @@ html, body {
   border-radius: 50%;
   background: var(--c-ink-faint);
   flex-shrink: 0;
+  pointer-events: none;
   transition: background 0.15s ease;
 }
+/* The real <select> covers the whole field so a click anywhere — on
+   the swatch, the display text, or the caret — opens the dropdown.
+   Its visible "current selection" text is rendered by .agency-picker__display
+   instead, since the select itself is transparent. */
 .agency-picker__select {
   appearance: none;
   -webkit-appearance: none;
@@ -331,11 +337,28 @@ html, body {
   font: inherit;
   font-size: 13px;
   font-weight: 600;
-  color: var(--c-ink);
-  padding: 0 20px 0 0;
+  color: transparent;
   cursor: pointer;
-  min-width: 160px;
   outline: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0 28px;
+}
+.agency-picker__select option { color: var(--c-ink); }
+/* Show the currently-selected text via the existing display element
+   (added by JS); the real select sits transparent on top to receive
+   clicks. */
+.agency-picker__display {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-ink);
+  pointer-events: none;
+  min-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .agency-picker__caret {
   width: 14px;
@@ -800,22 +823,40 @@ html, body {
 .top5__list { list-style: none; padding: 0; margin: 0; }
 .top5__list li {
   display: grid;
-  grid-template-columns: 18px 1fr auto;
+  grid-template-columns: 18px minmax(0, 1fr) 90px auto;
   gap: 10px;
   padding: 8px 0;
   border-bottom: 1px solid var(--c-line);
   font-size: 13px;
-  align-items: baseline;
+  align-items: center;
 }
 .top5__list li:last-child { border-bottom: 0; }
 .top5__list .rank {
   font-family: 'Roboto Mono', monospace;
   font-size: 11px;
   color: var(--c-ink-faint);
+  align-self: center;
 }
 .top5__list .desc {
   color: var(--c-ink);
   line-height: 1.35;
+}
+.top5__bar {
+  display: block;
+  height: 6px;
+  background: var(--c-line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.top5__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}
+.top5__empty {
+  color: var(--c-ink-faint);
+  font-style: italic;
+  grid-template-columns: 1fr !important;
 }
 .top5__list .val {
   font-family: 'Roboto Mono', monospace;
