@@ -35,6 +35,7 @@ function setFilter(kind, value) {
   state.filter = { kind, value };
   syncFilterUI();
   updateHash();
+  if (tip) tip.hidden = true;
   renderAll();
 }
 
@@ -43,7 +44,6 @@ function clearFilter() { setFilter('all', 'all'); }
 function syncFilterUI() {
   const select = document.getElementById('agency-select');
   const swatch = document.getElementById('agency-swatch');
-  const display = document.getElementById('agency-display');
   const picker = document.querySelector('.agency-picker');
 
   const f = state.filter;
@@ -59,12 +59,6 @@ function syncFilterUI() {
   }
   select.value = selectValue;
   swatch.style.background = swatchColor;
-  // Mirror the selected option's text into the visible display element
-  // since the real <select> sits transparent on top of the field.
-  if (display) {
-    const opt = select.options[select.selectedIndex];
-    display.textContent = opt ? opt.text : 'All agencies';
-  }
   picker.classList.toggle('agency-picker--active', f.kind !== 'all');
 
   // sync chips
@@ -86,15 +80,27 @@ function populateAgencySelect() {
   defOG.innerHTML = def.map(d => `<option value="dept:${d.dept}">${d.dept}</option>`).join('');
 }
 
-// Handle dropdown changes
+// Handle dropdown changes and delegate clicks from non-select parts of
+// the field (the swatch and caret) to the native picker.
 function bindAgencySelect() {
   const select = document.getElementById('agency-select');
+  const field = document.querySelector('.agency-picker__field');
   select.addEventListener('change', () => {
     const v = select.value;
     if (v === 'all') return clearFilter();
     const [kind, value] = v.split(':');
     setFilter(kind, value);
   });
+  if (field) {
+    field.addEventListener('click', (e) => {
+      if (e.target === select) return; // native handler already runs
+      if (typeof select.showPicker === 'function') {
+        try { select.showPicker(); } catch (_) { select.focus(); }
+      } else {
+        select.focus();
+      }
+    });
+  }
 }
 
 // Helpers for filtering datasets
@@ -216,7 +222,13 @@ document.querySelectorAll('[data-filter]').forEach(btn => {
 
 // ============ Tooltip ============
 const tip = document.getElementById('tooltip');
+// Touch-only devices synthesize a mousemove on tap but never fire
+// mouseleave — that's why tooltips stuck open on mobile. Skip the
+// tooltip entirely when the device lacks real hover capability.
+const HAS_HOVER = typeof window.matchMedia === 'function'
+  && window.matchMedia('(hover: hover)').matches;
 function showTip(html, ev) {
+  if (!HAS_HOVER) return;
   tip.innerHTML = html;
   tip.hidden = false;
   tip.style.left = (ev.clientX + 14) + 'px';
@@ -287,7 +299,12 @@ function renderTreemap() {
     .attr('y', d => d.y0 - 10)
     .attr('font-size', 12)
     .attr('pointer-events', 'none')
-    .text(d => `${d.data.name.toUpperCase()} · ${fmtB(d.value)}`);
+    .text(d => {
+      // If the band is too narrow to fit both, drop the dollar value.
+      const bandW = d.x1 - d.x0;
+      const full = `${d.data.name.toUpperCase()} · ${fmtB(d.value)}`;
+      return bandW < 160 ? d.data.name.toUpperCase() : full;
+    });
 
   // Leaf tiles
   const leaves = h.leaves();
@@ -478,10 +495,14 @@ function renderDonut() {
   groups = groups.filter(g => g.total > 0);
   if (groups.length === 0) return;
 
-  // Layout
-  const barH = 72;
-  const rowGap = 72;
-  const margin = { top: 32, right: 150, bottom: 28, left: 24 };
+  // Layout — on narrow widths, fold the +/- pp delta into the header
+  // line and drop the right-side gutter so the bar can use full width.
+  const isNarrow = W < 480;
+  const barH = isNarrow ? 64 : 72;
+  const rowGap = isNarrow ? 64 : 72;
+  const margin = isNarrow
+    ? { top: 32, right: 16, bottom: 28, left: 12 }
+    : { top: 32, right: 150, bottom: 28, left: 24 };
   const innerW = W - margin.left - margin.right;
   const H = margin.top + margin.bottom + groups.length * barH + (groups.length - 1) * rowGap;
 
@@ -498,16 +519,29 @@ function renderDonut() {
     const otherW = xScale(grp.other);
     const sbPct = grp.sb / grp.total;
     const otherPct = grp.other / grp.total;
+    const delta = (sbPct - GOAL) * 100;
+    const aboveGoal = delta >= 0;
 
-    // Section header (group name) + total on the right
+    // Section header (group name) on left, total + (mobile only) delta on right
     root.append('text').attr('x', 0).attr('y', y - 10)
       .attr('font-size', 12).attr('font-weight', 700)
       .attr('letter-spacing', '0.08em').attr('fill', grp.color)
       .text(grp.name.toUpperCase());
-    root.append('text').attr('x', sbW + otherW).attr('y', y - 10)
+    const totalText = isNarrow
+      ? `${fmtSmart(grp.total)}  ·  ${(aboveGoal ? '+' : '')}${delta.toFixed(1)} pp`
+      : fmtSmart(grp.total) + ' total';
+    const totalEl = root.append('text').attr('x', innerW).attr('y', y - 10)
       .attr('text-anchor', 'end').attr('font-family', "'Roboto Mono', monospace")
-      .attr('font-size', 13).attr('font-weight', 500).attr('fill', COLORS.ink)
-      .text(fmtSmart(grp.total) + ' total');
+      .attr('font-size', 13).attr('font-weight', 500).attr('fill', COLORS.ink);
+    if (isNarrow) {
+      // Render total + colored delta in one line via tspans
+      totalEl.append('tspan').text(fmtSmart(grp.total) + '  ·  ');
+      totalEl.append('tspan').attr('fill', aboveGoal ? '#1a8a55' : '#b5483b')
+        .attr('font-weight', 700)
+        .text((aboveGoal ? '+' : '') + delta.toFixed(1) + ' pp');
+    } else {
+      totalEl.text(totalText);
+    }
 
     // Bar segments
     root.append('rect').attr('x', 0).attr('y', y).attr('width', sbW).attr('height', barH)
@@ -553,18 +587,19 @@ function renderDonut() {
       .attr('fill', COLORS.muted).attr('letter-spacing', '0.05em')
       .text('23% GOAL');
 
-    // Performance indicator — how this sector compares to 25% goal
-    const delta = (sbPct - GOAL) * 100;
-    const aboveGoal = delta >= 0;
-    const indicator = root.append('text').attr('x', sbW + otherW + 14).attr('y', y + barH/2)
-      .attr('dominant-baseline', 'middle')
-      .attr('font-size', 13).attr('font-weight', 600);
-    indicator.append('tspan').attr('fill', aboveGoal ? '#1a8a55' : '#b5483b')
-      .text((aboveGoal ? '+' : '') + delta.toFixed(1) + ' pp');
-    root.append('text').attr('x', sbW + otherW + 14).attr('y', y + barH/2 + 16)
-      .attr('dominant-baseline', 'middle')
-      .attr('font-size', 10).attr('fill', COLORS.muted)
-      .attr('letter-spacing', '0.05em').text('vs. goal');
+    // Performance indicator — how this sector compares to the goal.
+    // On narrow widths it's folded into the header line above instead.
+    if (!isNarrow) {
+      const indicator = root.append('text').attr('x', sbW + otherW + 14).attr('y', y + barH/2)
+        .attr('dominant-baseline', 'middle')
+        .attr('font-size', 13).attr('font-weight', 600);
+      indicator.append('tspan').attr('fill', aboveGoal ? '#1a8a55' : '#b5483b')
+        .text((aboveGoal ? '+' : '') + delta.toFixed(1) + ' pp');
+      root.append('text').attr('x', sbW + otherW + 14).attr('y', y + barH/2 + 16)
+        .attr('dominant-baseline', 'middle')
+        .attr('font-size', 10).attr('fill', COLORS.muted)
+        .attr('letter-spacing', '0.05em').text('vs. goal');
+    }
   });
 }
 
@@ -602,7 +637,7 @@ function renderCompetition() {
   const el = document.getElementById('competition');
   el.innerHTML = '';
   const W = el.clientWidth || 800;
-  const H = 460;
+  let H = 460;
   const f = state.filter;
 
   const pricings = ['FIXED PRICE', 'COST TYPE', 'TIME AND MATERIAL AND LABOR HOUR'];
@@ -630,63 +665,114 @@ function renderCompetition() {
     });
   });
 
-  const svg = d3.select(el).append('svg').attr('width', W).attr('height', H);
-  const padding = 40;
-  const colW = (W - padding * 2) / 2;
-  const colCenters = [padding + colW / 2, padding + colW * 1.5];
+  // On narrow widths, stack the two columns vertically — each section
+  // (Competed / Not competed) gets the full width.
+  const isNarrow = W < 500;
+  const compKeys = ['COMPETED', 'NOT COMPETED'];
   const colTitles = ['Competed', 'Not competed'];
 
   // bubble size scale based on max in filtered data
   let maxV = 0;
-  groups.forEach(g => ['COMPETED','NOT COMPETED'].forEach(c => pricings.forEach(p => { if (data[g][c][p] > maxV) maxV = data[g][c][p]; })));
+  groups.forEach(g => compKeys.forEach(c => pricings.forEach(p => { if (data[g][c][p] > maxV) maxV = data[g][c][p]; })));
   if (maxV === 0) maxV = 1;
-  const rScale = d3.scaleSqrt().domain([0, maxV]).range([0, 42]);
+  // Cap bubble radius so two adjacent bubbles in a row never collide,
+  // and on mobile reserve room on the left for the pricing row label.
+  const padding = isNarrow ? 12 : 40;
+  const labelGutter = isNarrow ? 76 : 0;
+  const bubbleAreaW = isNarrow ? (W - padding * 2 - labelGutter) : (W - padding * 2);
+  const colW = isNarrow ? bubbleAreaW : bubbleAreaW / 2;
+  const subOffset = isNarrow ? Math.min(colW / 4, 60) : colW / 4 - 8;
+  const maxR = Math.max(14, Math.min(42, subOffset - 6));
+  const rScale = d3.scaleSqrt().domain([0, maxV]).range([0, maxR]);
 
-  // Column titles + totals
-  colTitles.forEach((t, i) => {
-    svg.append('text').attr('x', colCenters[i]).attr('y', 26).attr('text-anchor', 'middle')
-      .attr('font-family', "'Merriweather', Georgia, serif").attr('font-size', 15).attr('font-weight', 700)
-      .attr('fill', COLORS.ink).text(t);
-    const compKey = i === 0 ? 'COMPETED' : 'NOT COMPETED';
-    const tot = groups.reduce((s, g) => s + pricings.reduce((ss, p) => ss + data[g][compKey][p], 0), 0);
-    const grandTot = groups.reduce((s, g) => s + ['COMPETED','NOT COMPETED'].reduce((ss, c) => ss + pricings.reduce((sss, p) => sss + data[g][c][p], 0), 0), 0);
-    svg.append('text').attr('x', colCenters[i]).attr('y', 44).attr('text-anchor', 'middle')
-      .attr('font-family', "'Roboto Mono', monospace").attr('font-size', 12).attr('fill', COLORS.muted)
-      .text(`${fmtSmart(tot)} · ${grandTot > 0 ? fmtPct(tot/grandTot) : '—'}`);
-  });
+  // Recompute H based on layout: stacked sections are taller than side-by-side
+  const sectionHeader = isNarrow ? 60 : 0;     // title + sub on each section in narrow
+  const groupSubLabel = 24;
+  const rowGap = isNarrow ? Math.max(maxR * 2 + 18, 70) : 92;
+  const sectionH = (isNarrow ? sectionHeader : 86) + groupSubLabel + rowGap * 3 + 24;
+  H = isNarrow ? sectionH * 2 + 40 : 460;
+  const svg = d3.select(el).append('svg').attr('width', W).attr('height', H);
 
-  // Vertical divider
-  svg.append('line').attr('x1', W/2).attr('x2', W/2).attr('y1', 56).attr('y2', H - 60)
-    .attr('stroke', COLORS.line).attr('stroke-dasharray', '3,3');
+  if (!isNarrow) {
+    // Side-by-side columns
+    const colCenters = [padding + colW / 2, padding + colW * 1.5];
 
-  const yRow = (i) => 150 + i * 92;
-  const subOffset = colW / 4 - 8;
+    // Column titles + totals
+    colTitles.forEach((t, i) => {
+      svg.append('text').attr('x', colCenters[i]).attr('y', 26).attr('text-anchor', 'middle')
+        .attr('font-family', "'Merriweather', Georgia, serif").attr('font-size', 15).attr('font-weight', 700)
+        .attr('fill', COLORS.ink).text(t);
+      const compKey = compKeys[i];
+      const tot = groups.reduce((s, g) => s + pricings.reduce((ss, p) => ss + data[g][compKey][p], 0), 0);
+      const grandTot = groups.reduce((s, g) => s + compKeys.reduce((ss, c) => ss + pricings.reduce((sss, p) => sss + data[g][c][p], 0), 0), 0);
+      svg.append('text').attr('x', colCenters[i]).attr('y', 44).attr('text-anchor', 'middle')
+        .attr('font-family', "'Roboto Mono', monospace").attr('font-size', 12).attr('fill', COLORS.muted)
+        .text(`${fmtSmart(tot)} · ${grandTot > 0 ? fmtPct(tot/grandTot) : '—'}`);
+    });
+
+    // Vertical divider
+    svg.append('line').attr('x1', W/2).attr('x2', W/2).attr('y1', 56).attr('y2', H - 60)
+      .attr('stroke', COLORS.line).attr('stroke-dasharray', '3,3');
+  }
+
+  const yRow = (rowIdx, sectionTop) => sectionTop + rowGap / 2 + rowIdx * rowGap;
   const singleGroup = groups.length === 1;
 
-  ['COMPETED', 'NOT COMPETED'].forEach((compKey, colIdx) => {
-    const cx = colCenters[colIdx];
+  compKeys.forEach((compKey, colIdx) => {
+    let cx, sectionTop, sublabelY;
+    if (isNarrow) {
+      // Each section stacks vertically, full width
+      sectionTop = colIdx * sectionH + 26 + groupSubLabel;
+      cx = padding + labelGutter + colW / 2;
+      sublabelY = colIdx * sectionH + 26 + groupSubLabel - 8;
+      // Section header
+      const compTot = groups.reduce((s, g) => s + pricings.reduce((ss, p) => ss + data[g][compKey][p], 0), 0);
+      const grandTot = groups.reduce((s, g) => s + compKeys.reduce((ss, c) => ss + pricings.reduce((sss, p) => sss + data[g][c][p], 0), 0), 0);
+      svg.append('text').attr('x', padding).attr('y', colIdx * sectionH + 22)
+        .attr('font-family', "'Merriweather', Georgia, serif").attr('font-size', 15).attr('font-weight', 700)
+        .attr('fill', COLORS.ink).text(colTitles[colIdx]);
+      svg.append('text').attr('x', W - padding).attr('y', colIdx * sectionH + 22)
+        .attr('text-anchor', 'end').attr('font-family', "'Roboto Mono', monospace")
+        .attr('font-size', 12).attr('fill', COLORS.muted)
+        .text(`${fmtSmart(compTot)} · ${grandTot > 0 ? fmtPct(compTot/grandTot) : '—'}`);
+      if (colIdx === 1) {
+        // Divider line between sections
+        svg.append('line').attr('x1', padding).attr('x2', W - padding)
+          .attr('y1', colIdx * sectionH - 4).attr('y2', colIdx * sectionH - 4)
+          .attr('stroke', COLORS.line).attr('stroke-dasharray', '3,3');
+      }
+    } else {
+      const colCenters = [padding + colW / 2, padding + colW * 1.5];
+      cx = colCenters[colIdx];
+      sectionTop = 86;
+      sublabelY = 86;
+    }
 
     // group sublabels
     if (!singleGroup) {
-      svg.append('text').attr('x', cx - subOffset).attr('y', 86).attr('text-anchor', 'middle')
+      svg.append('text').attr('x', cx - subOffset).attr('y', sublabelY).attr('text-anchor', 'middle')
         .attr('font-size', 11).attr('font-weight', 700).attr('fill', COLORS.civ)
         .attr('letter-spacing', '0.08em').text('CIVILIAN');
-      svg.append('text').attr('x', cx + subOffset).attr('y', 86).attr('text-anchor', 'middle')
+      svg.append('text').attr('x', cx + subOffset).attr('y', sublabelY).attr('text-anchor', 'middle')
         .attr('font-size', 11).attr('font-weight', 700).attr('fill', COLORS.def)
         .attr('letter-spacing', '0.08em').text('DEFENSE');
     } else {
       const gColor = groups[0] === 'Defense' ? COLORS.def : COLORS.civ;
       const lbl = deptFilter ? `${deptFilter.toUpperCase()} · ${groups[0].toUpperCase()}` : groups[0].toUpperCase();
-      svg.append('text').attr('x', cx).attr('y', 86).attr('text-anchor', 'middle')
+      svg.append('text').attr('x', cx).attr('y', sublabelY).attr('text-anchor', 'middle')
         .attr('font-size', 11).attr('font-weight', 700).attr('fill', gColor)
         .attr('letter-spacing', '0.08em').text(lbl);
     }
 
     pricings.forEach((p, rowIdx) => {
-      const y = yRow(rowIdx);
+      const y = isNarrow
+        ? sectionTop + rowIdx * rowGap + rowGap / 2
+        : (150 + rowIdx * 92);
       if (colIdx === 0) {
-        svg.append('text').attr('x', 12).attr('y', y).attr('dominant-baseline', 'middle')
-          .attr('font-size', 12).attr('fill', COLORS.ink).attr('font-weight', 500).text(pricingLabel[p]);
+        const labelText = isNarrow && p === 'TIME AND MATERIAL AND LABOR HOUR' ? 'T&M' : pricingLabel[p];
+        const labelX = isNarrow ? padding : 12;
+        svg.append('text').attr('x', labelX).attr('y', y).attr('dominant-baseline', 'middle')
+          .attr('font-size', 12).attr('fill', COLORS.ink).attr('font-weight', 500).text(labelText);
       }
       groups.forEach((grp, gIdx) => {
         const val = data[grp][compKey][p];
@@ -908,6 +994,104 @@ function renderPricingCompetition() {
   `).join('');
 }
 
+// When a single dept is selected, the gov-wide aside content
+// (rankings, gov-wide callout) collapses to be useless. Swap in
+// dept-specific OTA facts instead.
+function renderOTAAside() {
+  const defaultEl = document.getElementById('ota-aside-default');
+  const deptEl = document.getElementById('ota-aside-dept');
+  if (!defaultEl || !deptEl) return;
+  const f = state.filter;
+
+  if (f.kind !== 'dept') {
+    defaultEl.hidden = false;
+    deptEl.hidden = true;
+    deptEl.innerHTML = '';
+    return;
+  }
+
+  defaultEl.hidden = true;
+  deptEl.hidden = false;
+
+  const dept = f.value;
+  const grp = dodLU[dept];
+  const tagColor = grp === 'Defense' ? COLORS.def : COLORS.civ;
+  const tagHtml = `<span class="name__tag" style="background:${tagColor}"></span>`;
+
+  const deptOTA = otaData.filter(d => d.dept === dept).sort((a, b) => a.fy - b.fy);
+  if (deptOTA.length === 0 || d3.sum(deptOTA, d => d.obs) === 0) {
+    deptEl.innerHTML = `
+      <div class="dept-facts">
+        <div class="dept-facts__head">
+          ${tagHtml}<span class="dept-facts__name">${dept}</span>
+          <span class="dept-facts__kicker">OTA</span>
+        </div>
+        <div class="dept-facts__empty">
+          No OTA spending reported for <strong>${dept}</strong> in FY21–FY25. OTA usage is concentrated in DoD R&D-focused services (Army, Air Force).
+        </div>
+      </div>`;
+    return;
+  }
+
+  const total5y = d3.sum(deptOTA, d => d.obs);
+  const fy25 = (deptOTA.find(d => d.fy === 2025) || { obs: 0 }).obs;
+  const fy24 = (deptOTA.find(d => d.fy === 2024) || { obs: 0 }).obs;
+  const yoy = fy25 - fy24;
+  const yoyPct = fy24 !== 0 ? (yoy / fy24) * 100 : null;
+  const peak = deptOTA.reduce((a, b) => b.obs > a.obs ? b : a);
+  const deptTotal = (deptData.find(d => d.dept === dept) || { obs: 0 }).obs;
+  const sharePct = deptTotal > 0 ? (fy25 / deptTotal) * 100 : null;
+
+  const yoyClass = yoy >= 0 ? 'dept-facts__delta--up' : 'dept-facts__delta--down';
+  const yoySign = yoy >= 0 ? '+' : '−';
+  const yoyAbs = Math.abs(yoy);
+  const yoyPctText = yoyPct !== null ? ` (${yoy >= 0 ? '+' : '−'}${Math.abs(yoyPct).toFixed(1)}%)` : '';
+
+  deptEl.innerHTML = `
+    <div class="dept-facts">
+      <div class="dept-facts__head">
+        ${tagHtml}<span class="dept-facts__name">${dept}</span>
+        <span class="dept-facts__kicker">OTA</span>
+      </div>
+      <div class="dept-facts__row">
+        <div>
+          <div class="dept-facts__lbl">FY25 OTA obligations</div>
+        </div>
+        <div class="dept-facts__val">${fmtSmart(fy25)}</div>
+      </div>
+      <div class="dept-facts__row">
+        <div>
+          <div class="dept-facts__lbl">FY25 vs FY24</div>
+        </div>
+        <div>
+          <div class="dept-facts__val ${yoyClass}">${yoySign}${fmtSmart(yoyAbs)}</div>
+          <div class="dept-facts__sub">${yoyPctText.trim() || '—'}</div>
+        </div>
+      </div>
+      <div class="dept-facts__row">
+        <div>
+          <div class="dept-facts__lbl">5-year total (FY21–25)</div>
+        </div>
+        <div class="dept-facts__val">${fmtSmart(total5y)}</div>
+      </div>
+      <div class="dept-facts__row">
+        <div>
+          <div class="dept-facts__lbl">Peak year</div>
+        </div>
+        <div>
+          <div class="dept-facts__val">FY${peak.fy}</div>
+          <div class="dept-facts__sub">${fmtSmart(peak.obs)}</div>
+        </div>
+      </div>
+      <div class="dept-facts__row">
+        <div>
+          <div class="dept-facts__lbl">OTA / total, FY25</div>
+        </div>
+        <div class="dept-facts__val">${sharePct !== null ? sharePct.toFixed(1) + '%' : '—'}</div>
+      </div>
+    </div>`;
+}
+
 // OTA share of each department's total contracting (FY2025). Surfaces
 // who *leans on* OTAs the most, not just absolute dollar size.
 function renderOTAShare() {
@@ -979,6 +1163,7 @@ function renderAll() {
   renderOTA();
   renderOTARank();
   renderOTAShare();
+  renderOTAAside();
 }
 
 populateAgencySelect();

@@ -136,7 +136,6 @@
       <label for="agency-select" class="agency-picker__label">Agency</label>
       <div class="agency-picker__field">
         <span class="agency-picker__swatch" id="agency-swatch"></span>
-        <span class="agency-picker__display" id="agency-display">All agencies</span>
         <select id="agency-select" class="agency-picker__select">
           <option value="all">All agencies</option>
           <optgroup label="Groups">
@@ -343,23 +342,21 @@
         <p class="viz-note">OTAs are a flexible alternative to traditional contracts. These figures are not included in the $793B total above.</p>
       </div>
       <aside class="panel__aside">
-        <div class="insight">
-          <div class="insight__kicker">Insight</div>
-          <p>OTA spending reached <strong>$18.2B</strong> in FY2025 — down $700M from FY2024 but still well above pre-2023 levels. The Army and Air Force dominate the category.</p>
+        <div id="ota-aside-default">
+          <div class="insight">
+            <div class="insight__kicker">Insight</div>
+            <p>OTA spending reached <strong>$18.2B</strong> in FY2025 — down $700M from FY2024 but still well above pre-2023 levels. The Army and Air Force dominate the category.</p>
+          </div>
+          <div class="rank-list">
+            <div class="rank-list__head">FY2025 share by department</div>
+            <ol id="ota-rank"></ol>
+          </div>
+          <div class="rank-list">
+            <div class="rank-list__head">OTA share of dept's total contracting</div>
+            <ol id="ota-share-rank"></ol>
+          </div>
         </div>
-        <div class="callout">
-          <div class="callout__big">$18.2B</div>
-          <div class="callout__text">FY2025 OTA obligations</div>
-          <div class="callout__delta">−$0.7B vs FY2024</div>
-        </div>
-        <div class="rank-list">
-          <div class="rank-list__head">FY2025 share by department</div>
-          <ol id="ota-rank"></ol>
-        </div>
-        <div class="rank-list">
-          <div class="rank-list__head">OTA share of dept's total contracting</div>
-          <ol id="ota-share-rank"></ol>
-        </div>
+        <div id="ota-aside-dept" hidden></div>
       </aside>
     </div>
   </section>

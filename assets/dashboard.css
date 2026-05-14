@@ -325,10 +325,10 @@ html, body {
   pointer-events: none;
   transition: background 0.15s ease;
 }
-/* The real <select> covers the whole field so a click anywhere — on
-   the swatch, the display text, or the caret — opens the dropdown.
-   Its visible "current selection" text is rendered by .agency-picker__display
-   instead, since the select itself is transparent. */
+/* The select sits in normal flex flow — keeps native open-on-click
+   snappy. Clicks on the swatch/caret are forwarded to the select via
+   JS (showPicker). The visible label comes from the select's own
+   selected option, not a separate display span. */
 .agency-picker__select {
   appearance: none;
   -webkit-appearance: none;
@@ -337,28 +337,11 @@ html, body {
   font: inherit;
   font-size: 13px;
   font-weight: 600;
-  color: transparent;
+  color: var(--c-ink);
   cursor: pointer;
   outline: none;
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  padding: 0 28px;
-}
-.agency-picker__select option { color: var(--c-ink); }
-/* Show the currently-selected text via the existing display element
-   (added by JS); the real select sits transparent on top to receive
-   clicks. */
-.agency-picker__display {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--c-ink);
-  pointer-events: none;
+  padding: 0 20px 0 0;
   min-width: 140px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .agency-picker__caret {
   width: 14px;
@@ -674,6 +657,73 @@ html, body {
 }
 .rank-list .bar-fill span { display: block; height: 100%; background: var(--c-primary); }
 
+/* Dept-specific OTA aside (shown when a single dept is filtered) */
+.dept-facts {
+  background: #fff;
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.dept-facts__head {
+  padding: 14px 16px;
+  background: var(--c-surface-tint);
+  border-bottom: 1px solid var(--c-line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dept-facts__name {
+  font-family: 'Merriweather', Georgia, serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--c-ink);
+}
+.dept-facts__kicker {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-ink-faint);
+  font-weight: 700;
+  margin-left: auto;
+}
+.dept-facts__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: baseline;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--c-line);
+}
+.dept-facts__row:last-child { border-bottom: 0; }
+.dept-facts__lbl {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-ink-muted);
+  font-weight: 600;
+}
+.dept-facts__val {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+.dept-facts__sub {
+  font-size: 11px;
+  color: var(--c-ink-faint);
+  font-family: 'Roboto Mono', monospace;
+  margin-top: 2px;
+}
+.dept-facts__delta--up { color: #1a8a55; }
+.dept-facts__delta--down { color: #b5483b; }
+.dept-facts__empty {
+  padding: 18px 16px;
+  font-size: 13px;
+  color: var(--c-ink-muted);
+  line-height: 1.5;
+}
+
 /* callout */
 .callout {
   background: var(--c-primary-darker);
@@ -965,7 +1015,31 @@ html, body {
   .kpi + .kpi { padding-left: 0; }
 }
 @media (max-width: 720px) {
+  /* Tighten side gutters so charts have more horizontal room */
+  .container { padding-left: 12px; padding-right: 12px; }
+  .panel__viz { padding: 16px; }
+  .panel__full { padding: 16px; }
+
+  /* Charts size themselves via SVG height; drop the desktop min-height
+     so we don't pad blank space under shorter mobile layouts. */
+  .viz-canvas { min-height: 0; }
+  .viz-canvas--tall { min-height: 0; }
+
+  /* The insight strip below the treemap is too cramped at 3 columns on
+     a phone — stack vertically with hairline dividers between items. */
+  .insight-strip { grid-template-columns: 1fr; padding-top: 14px; margin-top: 18px; }
+  .insight-strip__item {
+    padding: 12px 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--c-line);
+  }
+  .insight-strip__item:first-child { padding-top: 0; }
+  .insight-strip__item:last-child { padding-bottom: 0; border-bottom: 0; }
+
   .header-inner { flex-direction: column; align-items: flex-start; }
+  /* Download button takes too much room and isn't critical on mobile —
+     the dataset is still linked from the footer. */
+  .header-inner .usa-button { display: none; }
   .purchases { grid-template-columns: 1fr; }
   .purchases__col { border-right: 0; border-bottom: 1px solid var(--c-line); }
   .brand__title { font-size: 22px; }
