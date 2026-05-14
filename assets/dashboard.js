@@ -92,8 +92,12 @@ function bindAgencySelect() {
     setFilter(kind, value);
   });
   if (field) {
-    field.addEventListener('click', (e) => {
-      if (e.target === select) return; // native handler already runs
+    // mousedown (not click) — native selects open on mousedown, so
+    // matching it makes a tap on the swatch feel as instant as a tap
+    // on the select itself.
+    field.addEventListener('mousedown', (e) => {
+      if (e.target === select) return; // native handler runs
+      e.preventDefault(); // keep focus from jumping to field first
       if (typeof select.showPicker === 'function') {
         try { select.showPicker(); } catch (_) { select.focus(); }
       } else {

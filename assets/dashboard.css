@@ -309,7 +309,8 @@ html, body {
   padding: 6px 10px 6px 10px;
   position: relative;
   cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  /* No transition — instant visual feedback on click/focus so the
+     dropdown opening doesn't feel delayed by an animating focus ring. */
 }
 .agency-picker__field:hover { border-color: var(--c-primary); }
 .agency-picker__field:focus-within {
